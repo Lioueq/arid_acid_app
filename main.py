@@ -1,7 +1,8 @@
 import pygame
 import pygame.constants
 from random import choice
-from vars import pygame_btns, pygame_btns_reversed
+from vars import from_russian_letters_id_to_english_letters_id_capslock_off, \
+    from_russian_letters_id_to_english_letters_id_capslock_on
 
 
 COLORS = [i for i in range(255)]
@@ -14,10 +15,11 @@ def color():
 class Game:
     def __init__(self):
         self.SIZE = 800, 600
-        self.TEXT_POS = 240, 240
+        self.TEXT_POS = 0, 240
         self.FPS = 30
         self.BACKGROUND = 87, 0, 247
         self.TEXT_COLOR = 223, 223, 233
+        self.CAPS_LOCK = False
         self.count = 0
         pygame.init()
         self.clock = pygame.time.Clock()
@@ -51,13 +53,32 @@ class Game:
                 if event.type == pygame.MOUSEMOTION:
                     # print(pygame.mouse.get_pos())
                     pass
+                # KEYBOARD EVENTS
                 if event.type == pygame.KEYDOWN:
-                    need_button = pygame.key.key_code(self.word_couple[self.count])
+                    need_button = pygame.key.key_code(self.word_couple[self.count])  # NEED_BUTTON_ID
+                    '''Если буква русская, то ее id заменяют на id той буквы, с которой она находиться на клавиатуре
+                       Прописана логика для CAPSLOCK'''
+                    if need_button in from_russian_letters_id_to_english_letters_id_capslock_off.keys() \
+                            and not self.CAPS_LOCK:
+                        need_button = from_russian_letters_id_to_english_letters_id_capslock_off[need_button]
+                    elif need_button in from_russian_letters_id_to_english_letters_id_capslock_on.keys() \
+                            and self.CAPS_LOCK:
+                        need_button = from_russian_letters_id_to_english_letters_id_capslock_on[need_button]
+                    # ОБРАБОТКА НАЖАТИЙ CAPS_LOCK
+                    if event.key == pygame.K_CAPSLOCK:
+                        if self.CAPS_LOCK:
+                            self.CAPS_LOCK = False
+                        else:
+                            self.CAPS_LOCK = True
+                    if event.key == pygame.K_UP:
+                        print(self.CAPS_LOCK)
                     print(need_button)
                     print(event.key)
                     keys = pygame.key.get_pressed()
-                    if keys[need_button]:
+                    #  ПРОВЕРКА НА НАЖАТИЕ ID ТОЙ БУКВЫ, ЧТО УКАЗАНА В ТЕКСТЕ
+                    if keys[need_button] or keys[pygame.K_RALT]:
                         self.count += 1
+            #  RESET
             if self.count == len(self.word_couple):
                 self.count = 0
                 self.choice_word_couple()
