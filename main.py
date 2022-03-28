@@ -5,13 +5,6 @@ from random import choice
 from vars import from_russian_letters_id_to_english_letters_id_capslock_off, cera_pro_book_size
 
 
-COLORS = [i for i in range(255)]
-
-
-def color():
-    return choice(COLORS), choice(COLORS), choice(COLORS)
-
-
 class Game:
     def __init__(self):
         self.SIZE = 900, 600
@@ -36,16 +29,22 @@ class Game:
     def choice_word_couple(self):
         self.word_couple = choice(self.words_couples)
 
+    def reset(self):
+        self.choice_word_couple()
+        self.count = 0
+        self.shift = 0
+        self.error = False
+
     def render_text(self):
         # text to write
-        FONT = pygame.font.Font('data/cera_pro_fonts_forms/CeraPro-Regular.ttf', 60)
-        text = FONT.render(self.word_couple, True, self.TEXT_COLOR)
-        text_under = FONT.render(self.word_couple[:self.count], True, pygame.Color(250, 167, 0))
+        font = pygame.font.Font('data/cera_pro_fonts_forms/CeraPro-Regular.ttf', 60)
+        text = font.render(self.word_couple, True, self.TEXT_COLOR)
+        text_under = font.render(self.word_couple[:self.count], True, pygame.Color(250, 167, 0))
         # text with error number
-        text_error = FONT.render(f'Количество ошибок: {self.error_count}', True, pygame.Color(250, 167, 0))
+        # text_error = font.render(f'Количество ошибок: {self.error_count}', True, pygame.Color(250, 167, 0))
         self.screen.blit(text, self.TEXT_POS)
         self.screen.blit(text_under, self.TEXT_POS)
-        self.screen.blit(text_error, (self.TEXT_POS[0], self.TEXT_POS[1] + 100))
+        # self.screen.blit(text_error, (self.TEXT_POS[0], self.TEXT_POS[1] + 100))
         pygame.display.update()
 
     def render_subline(self):
@@ -58,9 +57,19 @@ class Game:
                                    self.TEXT_POS[1] + 65))
 
     def render_time_text(self, time_delta):
-        FONT = pygame.font.Font('data/cera_pro_fonts_forms/CeraPro-Regular.ttf', 60)
-        time_text = FONT.render(f'Осталось времени: {int(60 - time_delta)}', True, pygame.Color(250, 167, 0))
+        font = pygame.font.Font('data/cera_pro_fonts_forms/CeraPro-Regular.ttf', 60)
+        time_text = font.render(f'Осталось времени: {int(60 - time_delta)}', True, pygame.Color(250, 167, 0))
         self.screen.blit(time_text, (140, 50))
+
+    def render_end_game_text_right_couples_count(self, count):
+        font = pygame.font.Font('data/cera_pro_fonts_forms/CeraPro-Regular.ttf', 60)
+        time_text = font.render(f'Ваш итоговый счёт: {count}', True, pygame.Color(250, 167, 0))
+        self.screen.blit(time_text, (140, 50))
+
+    def render_end_game_text_error_count(self):
+        font = pygame.font.Font('data/cera_pro_fonts_forms/CeraPro-Regular.ttf', 60)
+        time_text = font.render(f'Кол-во ошибок: {self.error_count}', True, pygame.Color(250, 167, 0))
+        self.screen.blit(time_text, (140, 125))
 
     def main_window_scene(self):
         manager = pygame_gui.UIManager(self.SIZE, 'data/theme.json')
@@ -69,8 +78,10 @@ class Game:
         start_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((350, 250), (150, 75)),
                                                     text='START',
                                                     manager=manager)
+        self.reset()
+        self.error_count = 0
         while self.is_running:
-            time_delta = self.clock.tick(60) / 1000.0
+            time_delta = self.clock.tick(self.FPS) / 1000.0
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.is_running = False
@@ -85,15 +96,19 @@ class Game:
 
     def write_word_scene(self):
         start_time = time.time()
-        self.choice_word_couple()
-        self.error_count = 0
+        right_word_couples_count = 0
         click_count = 0
+        self.reset()
+        self.error_count = 0
         while self.is_running:
-            time_delta = time.time() - start_time
             self.clock.tick(self.FPS)
+            time_delta = time.time() - start_time
+            if int(time_delta) == 5:
+                self.end_game_scene(right_word_couples_count)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.is_running = False
+                # DEBUGGING DATA
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     click_count += 1
                     if click_count == 1:
@@ -123,14 +138,38 @@ class Game:
                         self.error_count += 1
             #  RESET
             if self.count == len(self.word_couple):
-                self.count = 0
-                self.choice_word_couple()
-                self.error_count = 0
-                self.shift = 0
+                right_word_couples_count += 1
+                self.reset()
             self.screen.fill(self.BACKGROUND)
-            self.render_text()
             self.render_subline()
             self.render_time_text(time_delta)
+            self.render_text()
+            pygame.display.flip()
+
+    def end_game_scene(self, right_word_couples_count):
+        manager = pygame_gui.UIManager(self.SIZE, 'data/theme.json')
+        restart_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((350, 200), (150, 75)),
+                                                      text='RESTART',
+                                                      manager=manager)
+        exit_to_menu_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((350, 300), (150, 75)),
+                                                           text='EXIT TO MENU',
+                                                           manager=manager)
+        while self.is_running:
+            time_delta = self.clock.tick(self.FPS) / 1000.0
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.is_running = False
+                if event.type == pygame_gui.UI_BUTTON_PRESSED:
+                    if event.ui_element == restart_button:
+                        self.write_word_scene()
+                    elif event.ui_element == exit_to_menu_button:
+                        self.main_window_scene()
+                manager.process_events(event)
+            manager.update(time_delta)
+            self.screen.fill(self.BACKGROUND)
+            manager.draw_ui(self.screen)
+            self.render_end_game_text_error_count()
+            self.render_end_game_text_right_couples_count(right_word_couples_count)
             pygame.display.flip()
 
 
