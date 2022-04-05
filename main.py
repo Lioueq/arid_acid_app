@@ -3,26 +3,28 @@ import pygame_gui
 import time
 from random import choice
 from vars import from_russian_letters_id_to_english_letters_id_capslock_off, cera_pro_book_size
+from kreekly_com_parser import word_couples_updater
 
 
 class Game:
     def __init__(self):
+        pygame.init()
         self.SIZE = 900, 600
         self.TEXT_POS = 120, 250
         self.FPS = 30
         self.BACKGROUND = pygame.Color('#08592e')
         self.TEXT_COLOR = pygame.Color('#b383dd')
+        self.FONT = pygame.font.Font('data/cera_pro_fonts_forms/CeraPro-Regular.ttf', 60)
         self.error = False
         self.shift = 0
         self.count = 0
         self.is_running = True
-        pygame.init()
         self.clock = pygame.time.Clock()
-        game_icon = pygame.image.load('data/icon2.png')
+        game_icon = pygame.image.load('data/images/icon2.png')
         pygame.display.set_icon(game_icon)
         pygame.display.set_caption('Need for nicotine')
         self.screen = pygame.display.set_mode(self.SIZE)
-        with open('words.txt', encoding='utf-8') as file:
+        with open('data/word_couples.txt', encoding='utf-8') as file:
             unstripped_words_couples = file.readlines()
             self.words_couples = [i.rstrip('\n') for i in unstripped_words_couples]
 
@@ -37,11 +39,10 @@ class Game:
 
     def render_text(self):
         # text to write
-        font = pygame.font.Font('data/cera_pro_fonts_forms/CeraPro-Regular.ttf', 60)
-        text = font.render(self.word_couple, True, self.TEXT_COLOR)
-        text_under = font.render(self.word_couple[:self.count], True, pygame.Color(250, 167, 0))
+        text = self.FONT.render(self.word_couple, True, self.TEXT_COLOR)
+        text_under = self.FONT.render(self.word_couple[:self.count], True, pygame.Color(250, 167, 0))
         # text with error number
-        # text_error = font.render(f'Количество ошибок: {self.error_count}', True, pygame.Color(250, 167, 0))
+        # text_error = self.FONT.render(f'Количество ошибок: {self.error_count}', True, pygame.Color(250, 167, 0))
         self.screen.blit(text, self.TEXT_POS)
         self.screen.blit(text_under, self.TEXT_POS)
         # self.screen.blit(text_error, (self.TEXT_POS[0], self.TEXT_POS[1] + 100))
@@ -57,18 +58,15 @@ class Game:
                                    self.TEXT_POS[1] + 65))
 
     def render_time_text(self, time_delta):
-        font = pygame.font.Font('data/cera_pro_fonts_forms/CeraPro-Regular.ttf', 60)
-        time_text = font.render(f'Осталось времени: {int(60 - time_delta)}', True, pygame.Color(250, 167, 0))
+        time_text = self.FONT.render(f'Осталось времени: {int(60 - time_delta)}', True, pygame.Color(250, 167, 0))
         self.screen.blit(time_text, (140, 50))
 
     def render_end_game_text_right_couples_count(self, count):
-        font = pygame.font.Font('data/cera_pro_fonts_forms/CeraPro-Regular.ttf', 60)
-        time_text = font.render(f'Ваш итоговый счёт: {count}', True, pygame.Color(250, 167, 0))
+        time_text = self.FONT.render(f'Ваш итоговый счёт: {count}', True, pygame.Color(250, 167, 0))
         self.screen.blit(time_text, (140, 50))
 
     def render_end_game_text_error_count(self):
-        font = pygame.font.Font('data/cera_pro_fonts_forms/CeraPro-Regular.ttf', 60)
-        time_text = font.render(f'Кол-во ошибок: {self.error_count}', True, pygame.Color(250, 167, 0))
+        time_text = self.FONT.render(f'Кол-во ошибок: {self.error_count}', True, pygame.Color(250, 167, 0))
         self.screen.blit(time_text, (140, 125))
 
     def main_window_scene(self):
@@ -78,6 +76,9 @@ class Game:
         start_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((350, 250), (150, 75)),
                                                     text='START',
                                                     manager=manager)
+        update_couples_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((350, 350), (150, 75)),
+                                                             text='UPDATE WORDS',
+                                                             manager=manager)
         self.reset()
         self.error_count = 0
         while self.is_running:
@@ -88,6 +89,8 @@ class Game:
                 if event.type == pygame_gui.UI_BUTTON_PRESSED:
                     if event.ui_element == start_button:
                         self.write_word_scene()
+                    elif event.ui_element == update_couples_button:
+                        word_couples_updater()
                 manager.process_events(event)
             manager.update(time_delta)
             self.screen.blit(background, (0, 0))
@@ -97,26 +100,16 @@ class Game:
     def write_word_scene(self):
         start_time = time.time()
         right_word_couples_count = 0
-        click_count = 0
         self.reset()
         self.error_count = 0
         while self.is_running:
             self.clock.tick(self.FPS)
             time_delta = time.time() - start_time
-            if int(time_delta) == 5:
+            if int(time_delta) == 60:
                 self.end_game_scene(right_word_couples_count)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.is_running = False
-                # DEBUGGING DATA
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    click_count += 1
-                    if click_count == 1:
-                        x1 = pygame.mouse.get_pos()[0]
-                    elif click_count == 2:
-                        x2 = pygame.mouse.get_pos()[0]
-                        print(x2 - x1)
-                        click_count = 0
                 # KEYBOARD EVENTS
                 if event.type == pygame.KEYDOWN:
                     need_button = pygame.key.key_code(self.word_couple[self.count])  # NEED_BUTTON_ID
@@ -131,8 +124,7 @@ class Game:
                         self.count += 1
                         self.error = False
                     elif keys[8]:
-                        self.shift -= cera_pro_book_size[self.word_couple[self.count - 1]]
-                        self.count -= 1
+                        self.count = len(self.word_couple)
                     elif not keys[need_button] and (event.key != pygame.K_LSHIFT and event.key != pygame.K_LALT):
                         self.error = True
                         self.error_count += 1
