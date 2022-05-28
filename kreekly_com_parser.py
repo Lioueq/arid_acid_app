@@ -22,7 +22,7 @@ def word_couples_updater():
             ru_word = word_couple_data.find('span', class_='rus').text
             if len(en_word.split()) > 1 or len(ru_word.split()) > 1:
                 continue
-            word_couple = f'{en_word} - {ru_word}\n'
+            word_couple = f'{en_word.lower()} - {ru_word.lower()}\n'
             if len(word_couple[:-2]) <= 20:
                 word_couples.append(word_couple)
 

@@ -20,9 +20,14 @@ class Game:
         self.count = 0
         self.is_running = True
         self.clock = pygame.time.Clock()
+        self.sound1 = pygame.mixer.Sound('data/audio/wow_anime_sound.wav')
+        self.sound2 = pygame.mixer.Sound('data/audio/boom_error.wav')
+        pygame.mixer.music.load('data/audio/shadowraze_x_everlasting_summer.mp3')
+        pygame.mixer.music.set_volume(0.2)
+        pygame.mixer.music.play(-1)
         game_icon = pygame.image.load('data/images/icon2.png')
         pygame.display.set_icon(game_icon)
-        pygame.display.set_caption('Need for nicotine')
+        pygame.display.set_caption('Arid acid')
         self.screen = pygame.display.set_mode(self.SIZE)
         with open('data/word_couples.txt', encoding='utf-8') as file:
             unstripped_words_couples = file.readlines()
@@ -49,7 +54,7 @@ class Game:
         pygame.display.update()
 
     def render_subline(self):
-        subline = pygame.Surface((cera_pro_book_size[self.word_couple[self.count]], 4))
+        subline = pygame.Surface((cera_pro_book_size[self.word_couple[self.count].lower()], 4))
         if self.error:
             subline.fill(pygame.Color('red'))
         else:
@@ -79,6 +84,7 @@ class Game:
         update_couples_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((350, 350), (150, 75)),
                                                              text='UPDATE WORDS',
                                                              manager=manager)
+        app_name_text = self.FONT.render('ARID ACID', True, pygame.Color(250, 167, 0))
         self.reset()
         self.error_count = 0
         while self.is_running:
@@ -91,9 +97,13 @@ class Game:
                         self.write_word_scene()
                     elif event.ui_element == update_couples_button:
                         word_couples_updater()
+                        with open('data/word_couples.txt', encoding='utf-8') as file:
+                            unstripped_words_couples = file.readlines()
+                            self.words_couples = [i.rstrip('\n') for i in unstripped_words_couples]
                 manager.process_events(event)
             manager.update(time_delta)
             self.screen.blit(background, (0, 0))
+            self.screen.blit(app_name_text, (300, 100))
             manager.draw_ui(self.screen)
             pygame.display.update()
 
@@ -120,12 +130,14 @@ class Game:
                     keys = pygame.key.get_pressed()
                     #  ПРОВЕРКА НА НАЖАТИЕ ID ТОЙ БУКВЫ, ЧТО УКАЗАНА В ТЕКСТЕ
                     if keys[need_button]:
+                        self.sound1.play()
                         self.shift += cera_pro_book_size[self.word_couple[self.count]]
                         self.count += 1
                         self.error = False
                     elif keys[8]:
                         self.count = len(self.word_couple)
                     elif not keys[need_button] and (event.key != pygame.K_LSHIFT and event.key != pygame.K_LALT):
+                        self.sound2.play()
                         self.error = True
                         self.error_count += 1
             #  RESET
