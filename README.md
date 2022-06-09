@@ -4,6 +4,6 @@
 Проект выполнялся на python 3.10.
 Используемые библиотеки:
 
-pyqt, pygui, requests, beautiful soup.
+pygame, pygui, requests, beautiful soup.
 
 Для обновления словаря используестя парсер сайта kreekly.com.
